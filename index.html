@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Semiconductor - HR & Payroll Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js and PapaParse via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation & Filters -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-microchip brand-icon"></i>
+                <h2>TOWER</h2>
+                <span>Semiconductor</span>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <button class="menu-item active" onclick="switchTab('overview')">
+                    <i class="fa-solid fa-chart-pie"></i> Overview & HR
+                </button>
+                <button class="menu-item" onclick="switchTab('payroll')">
+                    <i class="fa-solid fa-wallet"></i> Payroll & Finance
+                </button>
+                <button class="menu-item" onclick="switchTab('data-quality')">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Quality & Audits
+                </button>
+                <button class="menu-item" onclick="switchTab('clarifications')">
+                    <i class="fa-solid fa-question-circle"></i> Assumptions & Qs
+                </button>
+            </nav>
+            
+            <div class="sidebar-filters">
+                <h3><i class="fa-solid fa-sliders"></i> Global Filters</h3>
+                
+                <div class="filter-group">
+                    <label for="filter-site">Site (Location)</label>
+                    <select id="filter-site" onchange="applyFilters()">
+                        <option value="ALL">All Locations</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-dept">Department</label>
+                    <select id="filter-dept" onchange="applyFilters()">
+                        <option value="ALL">All Departments</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-title">Job Title</label>
+                    <select id="filter-title" onchange="applyFilters()">
+                        <option value="ALL">All Job Titles</option>
+                    </select>
+                </div>
+                
+                <button class="btn-reset" onclick="resetFilters()">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h1>HR & Payroll Control Center</h1>
+                    <p>Single Source of Truth Decision Support System</p>
+                </div>
+                <div class="header-meta">
+                    <div class="meta-item">
+                        <span class="label">Latest Month</span>
+                        <span class="val" id="latest-month-label">December 2024</span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- KPI Cards Scorecard Grid -->
+            <section class="kpi-grid">
+                <div class="kpi-card" data-kpi="headcount">
+                    <div class="kpi-icon icon-indigo"><i class="fa-solid fa-users"></i></div>
+                    <div class="kpi-content">
+                        <h3>Active Headcount</h3>
+                        <div class="value" id="kpi-headcount">-</div>
+                        <span class="trend text-indigo"><i class="fa-solid fa-circle-check"></i> Verified HCM Count</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card warning-card" data-kpi="ghost">
+                    <div class="kpi-icon icon-rose"><i class="fa-solid fa-ghost"></i></div>
+                    <div class="kpi-content">
+                        <h3>Ghost Leakage Cost</h3>
+                        <div class="value" id="kpi-ghost">-</div>
+                        <span class="trend text-rose" id="kpi-ghost-trend"><i class="fa-solid fa-triangle-exclamation"></i> Action Required</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card" data-kpi="overrun">
+                    <div class="kpi-icon icon-amber"><i class="fa-solid fa-scale-unbalanced"></i></div>
+                    <div class="kpi-content">
+                        <h3>Payroll Overruns</h3>
+                        <div class="value" id="kpi-overrun">-</div>
+                        <span class="trend text-amber" id="kpi-overrun-trend"><i class="fa-solid fa-chart-line"></i> Cumulative Variance</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card" data-kpi="turnover">
+                    <div class="kpi-icon icon-teal"><i class="fa-solid fa-user-minus"></i></div>
+                    <div class="kpi-content">
+                        <h3>Turnover Rate (YTD)</h3>
+                        <div class="value" id="kpi-turnover">-</div>
+                        <span class="trend text-teal"><i class="fa-solid fa-clock-rotate-left"></i> YTD Site Average</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card" data-kpi="open-roles">
+                    <div class="kpi-icon icon-sky"><i class="fa-solid fa-briefcase"></i></div>
+                    <div class="kpi-content">
+                        <h3>Open Roles</h3>
+                        <div class="value" id="kpi-open-roles">-</div>
+                        <span class="trend text-sky"><i class="fa-solid fa-circle-plus"></i> Active Vacancies</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Dynamic Tab Container Panels -->
+            <div class="tab-container">
+                <!-- Overview & HR Tab -->
+                <div id="tab-overview" class="tab-panel active">
+                    <!-- Row 1: Global Headcount Trend (Full Width) -->
+                    <div class="charts-row">
+                        <div class="chart-card card-double">
+                            <div class="chart-header">
+                                <h3>Global Headcount Trend (HCM Central vs. Manual Site Reports)</h3>
+                                <p>Reconciliation of verified database counts against manual manager submissions</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-headcount"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 2: Turnover by Site & Recruitment Velocity (Side-by-Side) -->
+                    <div class="charts-row mt-4">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Annual Employee Turnover Rate by Site (2024)</h3>
+                                <p>Comparison of YTD attrition metrics across manufacturing hubs</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-turnover"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Recruitment Velocity: Open Roles vs. Monthly New Hires by Site</h3>
+                                <p>Tracking hiring progress against open requisitions to identify resourcing constraints</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-recruitment"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Monthly Terminations Trend & Turnover by Department (Side-by-Side) -->
+                    <div class="charts-row mt-4">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Monthly Terminations & Turnover Rate Trend</h3>
+                                <p>Volume of terminations and monthly attrition rate trajectory</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-terminations-trend"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Annual Employee Turnover Rate by Department (2024)</h3>
+                                <p>Attrition rates by business unit to identify high-risk roles</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-turnover-dept"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payroll & Finance Tab -->
+                <div id="tab-payroll" class="tab-panel">
+                    <div class="charts-row">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Total Payroll Budget Variance by Department (Cumulative)</h3>
+                                <p>Identifying business units with largest overruns (Actual Gross Pay vs Contractual Salary)</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-salary-variance"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Monthly Ghost Employee Leakage Cost Trend</h3>
+                                <p>Financial impact of paying salary to terminated employee records</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart-ghost-trend"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tables-row mt-4">
+                        <!-- Cost Center Efficiency Table -->
+                        <div class="data-table-card">
+                            <div class="card-header-clean">
+                                <h3>Cost Center Budget Efficiency</h3>
+                                <p>Consistently over-budget financial units</p>
+                            </div>
+                            <div class="table-scroll">
+                                <table id="cost-center-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Cost Center</th>
+                                            <th>Active Headcount</th>
+                                            <th>Cumulative Budget ($)</th>
+                                            <th>Cumulative Paid ($)</th>
+                                            <th>Cumulative Variance ($)</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Salary Benchmarking Card -->
+                        <div class="benchmarking-card">
+                            <div class="card-header-clean">
+                                <h3>Salary Benchmarking Tool</h3>
+                                <p>Below-Average salary analysis by Job Title</p>
+                            </div>
+                            <div class="benchmarking-summary">
+                                <div class="metric-block">
+                                    <span class="val" id="below-avg-count">0</span>
+                                    <span class="lbl">Employees Below Local Avg Salary</span>
+                                </div>
+                            </div>
+                            <div class="table-scroll" style="height: 180px;">
+                                <table id="salary-benchmarking-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Job Title</th>
+                                            <th>Local Avg ($/mo)</th>
+                                            <th>Below Avg Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Quality & Audits Tab -->
+                <div id="tab-data-quality" class="tab-panel">
+                    <div class="data-quality-summary-grid">
+                        <div class="quality-card">
+                            <h3>Duplicate Records Resolved</h3>
+                            <div class="number text-indigo" id="dq-duplicates">0</div>
+                            <p>Pairs of duplicated employee rows averaged and combined in Step 2</p>
+                        </div>
+                        <div class="quality-card">
+                            <h3>Missing Cost Centers Filled</h3>
+                            <div class="number text-teal" id="dq-cost-centers">0</div>
+                            <p>Cost center gaps filled using forward/backward fills in Step 2</p>
+                        </div>
+                        <div class="quality-card">
+                            <h3>Missing Manager IDs Flagged</h3>
+                            <div class="number text-amber" id="dq-managers">0</div>
+                            <p>Null managers mapped to "UNKNOWN" baseline flags</p>
+                        </div>
+                        <div class="quality-card">
+                            <h3>Severely Leaking Ghost Records</h3>
+                            <div class="number text-rose" id="dq-ghosts">0</div>
+                            <p>Paid terminated accounts flagged in the current dataset</p>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table-card mt-4">
+                        <div class="card-header-clean">
+                            <div class="header-flex">
+                                <div>
+                                    <h3>Active Ghost Employee Audit Registry</h3>
+                                    <p>Live registry of active payments to terminated HR accounts requiring immediate finance intervention</p>
+                                </div>
+                                <span class="badge badge-rose" id="ghost-alert-count">0 Alerts Pending</span>
+                            </div>
+                        </div>
+                        <div class="table-scroll">
+                            <table id="ghost-employees-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee ID</th>
+                                        <th>Full Name</th>
+                                        <th>Department</th>
+                                        <th>Site</th>
+                                        <th>HCM HR Status</th>
+                                        <th>Payroll Status</th>
+                                        <th>Gross Paid ($)</th>
+                                        <th>Action Plan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assumptions & Clarifications Tab -->
+                <div id="tab-clarifications" class="tab-panel">
+                    <div class="clarification-layout">
+                        <div class="info-card">
+                            <h2><i class="fa-solid fa-check-double text-indigo"></i> ETL & Architecture Assumptions</h2>
+                            <p class="section-intro">The dashboard and pipeline run on these core constraints established during system design:</p>
+                            
+                            <ul class="assumptions-list">
+                                <li>
+                                    <strong>1. Primary Matching Key:</strong>
+                                    <code>employee_id</code> is a unique, permanent identifier that matches exactly across HCM and Payroll systems. No mapping tables are needed.
+                                </li>
+                                <li>
+                                    <strong>2. Grain & Snapshotting:</strong>
+                                    The data under <code>year_month</code> represents the official state on the last calendar day of that month.
+                                </li>
+                                <li>
+                                    <strong>3. Single Currency Normalization:</strong>
+                                    All monetary values are standardized in USD ($). Currency conversions were executed at data ingress.
+                                </li>
+                                <li>
+                                    <strong>4. Normalization of expected salary:</strong>
+                                    The expected monthly contractual salary is computed strictly as <code>annual_salary / 12.0</code>.
+                                </li>
+                                <li>
+                                    <strong>5. Duplicate Row Handling:</strong>
+                                    Multiple rows for an employee in a single month are treated as duplicate rows (e.g. system sync glitch) and the average of the salaries is taken.
+                                </li>
+                                <li>
+                                    <strong>6. Explanation of Salary Variance & Budget Overruns:</strong>
+                                    The salary variance (Actual Gross Pay vs. Contractual Expected Salary) is caused by: (a) Overtime, bonuses, or local shift allowances that are paid out in payroll but not modeled in HCM's base annual salary, (b) System timing gaps (delays in offboarding or status changes), and (c) Severe leaks (unauthorized payments made to terminated accounts), which are isolated in the audit registry.
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="info-card">
+                            <h2><i class="fa-solid fa-circle-question text-amber"></i> Business Clarifications Required</h2>
+                            <p class="section-intro">Before finalizing automated compliance locks, business leadership must review these outstanding parameters:</p>
+                            
+                            <div class="clarification-box box-amber">
+                                <h4><i class="fa-solid fa-user-clock"></i> 1. Official Headcount Policy (Leaves)</h4>
+                                <p>Do employees with a status of "On Leave" (long-term leave or leave without pay) count toward official headcount, or should they be excluded from operations capacity planning?</p>
+                            </div>
+                            
+                            <div class="clarification-box box-indigo">
+                                <h4><i class="fa-solid fa-code-merge"></i> 2. Source of Truth Resolution</h4>
+                                <p>When an employee is active in HCM but terminated in Payroll, or vice-versa, which system's flag takes priority for headcount calculations? (HCM is currently assumed as truth).</p>
+                            </div>
+                            
+                            <div class="clarification-box box-sky">
+                                <h4><i class="fa-solid fa-calendar-days"></i> 3. Timing Gaps & Manual Reporting Cutoffs</h4>
+                                <p>Site managers submit manual reports on the 20th, while automated databases close on the 30th. This 10-day delay creates permanent variance. How should the dashboard adjust for this noise?</p>
+                            </div>
+                            
+                            <div class="clarification-box box-rose">
+                                <h4><i class="fa-solid fa-circle-exclamation"></i> 4. Variance Tolerance Thresholds</h4>
+                                <p>What percentage mismatch between expected salary and actual pay constitutes a real financial alert (e.g. over 1% variance), versus acceptable timing noise?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Custom Application JS -->
+    <script src="app.js"></script>
+</body>
+</html>
