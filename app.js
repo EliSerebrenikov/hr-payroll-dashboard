@@ -132,7 +132,7 @@ function applyFilters() {
 // Calculate & Render KPI Cards
 function updateKPIs(employees, recon, siteFilter, deptFilter, titleFilter) {
     // A. Active Headcount (For Latest Month)
-    const latestActive = employees.filter(row => row.year_month === LATEST_MONTH && row.consolidated_status === 'Active');
+    const latestActive = employees.filter(row => row.year_month === LATEST_MONTH && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave'));
     const headcount = latestActive.length;
     document.getElementById("kpi-headcount").textContent = headcount.toLocaleString();
     
@@ -556,7 +556,7 @@ function renderTables(employees) {
         costCenterData[row.cost_center].paid += (row.gross_salary || 0);
         costCenterData[row.cost_center].variance += (row.salary_variance || 0);
         
-        if (row.year_month === LATEST_MONTH && row.consolidated_status === 'Active') {
+        if (row.year_month === LATEST_MONTH && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')) {
             costCenterData[row.cost_center].headcount++;
         }
     });
