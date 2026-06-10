@@ -719,3 +719,6 @@ tr.row-warning td {
 
 .box-rose { border-left-color: var(--rose); background-color: rgba(244, 63, 94, 0.02); }
 .box-rose h4 { color: var(--rose); }
+
+.box-teal { border-left-color: var(--teal); background-color: rgba(20, 184, 166, 0.02); }
+.box-teal h4 { color: var(--teal); }

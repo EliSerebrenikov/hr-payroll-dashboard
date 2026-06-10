@@ -209,14 +209,14 @@ function renderCharts(employees, recon, siteFilter) {
     const selectedTitle = document.getElementById("filter-title").value;
     
     const hcmTrend = months.map(m => {
-        return employees.filter(row => row.year_month === m && row.consolidated_status === 'Active').length;
+        return employees.filter(row => row.year_month === m && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')).length;
     });
     
     const siteTrend = months.map(m => {
         // Calculate total active HCM employees for the selected site (unfiltered by dept/title)
         const siteHcmRows = employeesData.filter(row => 
             row.year_month === m && 
-            row.consolidated_status === 'Active' && 
+            (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave') && 
             (selectedSite === "ALL" || row.site === selectedSite)
         );
         const totalHcmActive = siteHcmRows.length;
@@ -224,7 +224,7 @@ function renderCharts(employees, recon, siteFilter) {
         // Calculate filtered active HCM employees (filtered by site, dept, title)
         const filteredHcmRows = employees.filter(row => 
             row.year_month === m && 
-            row.consolidated_status === 'Active'
+            (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')
         );
         const filteredHcmActive = filteredHcmRows.length;
         
