@@ -173,7 +173,7 @@ function updateKPIs(employees, recon, siteFilter, deptFilter, titleFilter) {
     const monthlyActiveCounts = {};
     const months2024 = ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12'];
     months2024.forEach(m => {
-        monthlyActiveCounts[m] = employees.filter(row => row.year_month === m && row.consolidated_status === 'Active').length;
+        monthlyActiveCounts[m] = employees.filter(row => row.year_month === m && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')).length;
     });
     
     const activeValues = Object.values(monthlyActiveCounts);
@@ -191,6 +191,10 @@ function updateKPIs(employees, recon, siteFilter, deptFilter, titleFilter) {
         const openRoles = latestRecon.reduce((sum, row) => sum + (row.open_roles || 0), 0);
         document.getElementById("kpi-open-roles").textContent = openRoles.toLocaleString();
     }
+
+    // F. Employees On Leave (Latest Month)
+    const latestLeave = employees.filter(row => row.year_month === LATEST_MONTH && row.consolidated_status === 'On Leave');
+    document.getElementById("kpi-leave").textContent = latestLeave.length.toLocaleString();
 }
 
 // Render Dashboard Charts
@@ -291,7 +295,7 @@ function renderCharts(employees, recon, siteFilter) {
         const monthlyActive = [];
         const months2024 = ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06', '2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12'];
         months2024.forEach(m => {
-            monthlyActive.push(employeesData.filter(row => row.site === s && row.year_month === m && row.consolidated_status === 'Active').length);
+            monthlyActive.push(employeesData.filter(row => row.site === s && row.year_month === m && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')).length);
         });
         
         const sumActive = monthlyActive.reduce((a, b) => a + b, 0);
@@ -374,7 +378,7 @@ function renderCharts(employees, recon, siteFilter) {
     // D. Monthly Terminations & Turnover Rate Trend (Dual Y-Axis Line/Bar Chart)
     const termTrendData = months.map(m => {
         const terms = employees.filter(row => row.year_month === m && row.status_hcm === 'Terminated').length;
-        const active = employees.filter(row => row.year_month === m && row.consolidated_status === 'Active').length;
+        const active = employees.filter(row => row.year_month === m && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')).length;
         const rate = active > 0 ? (terms / active) * 100 : 0;
         return { terms, rate };
     });
@@ -446,7 +450,7 @@ function renderCharts(employees, recon, siteFilter) {
         
         const monthlyActive = [];
         months2024.forEach(m => {
-            monthlyActive.push(deptEmp2024.filter(row => row.year_month === m && row.consolidated_status === 'Active').length);
+            monthlyActive.push(deptEmp2024.filter(row => row.year_month === m && (row.consolidated_status === 'Active' || row.consolidated_status === 'On Leave')).length);
         });
         const sumActive = monthlyActive.reduce((a, b) => a + b, 0);
         const avgActive = monthlyActive.length > 0 ? (sumActive / monthlyActive.length) : 0;
